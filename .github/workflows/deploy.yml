@@ -40,13 +40,11 @@ jobs:
           IMAGE_TAG: ${{ github.sha }}
         run: |
           cd lambda/metadata_extractor
-          ######
-          #
-          #  TODO: implement build and push to ECR
-          #
-          ######
-          exit 1
-
+          aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 022673484458.dkr.ecr.us-east-1.amazonaws.com
+          docker build -t metadata-extractor .
+          docker tag metadata-extractor:latest 022673484458.dkr.ecr.us-east-1.amazonaws.com/metadata-extractor:latest
+          docker push 022673484458.dkr.ecr.us-east-1.amazonaws.com/metadata-extractor:latest
+          
       - name: Check if Lambda function exists
         id: check-lambda-metadata-extractor
         run: |
@@ -112,13 +110,10 @@ jobs:
           IMAGE_TAG: ${{ github.sha }}
         run: |
           cd lambda/image_validator
-          ######
-          #
-          #  TODO: implement build and push to ECR
-          #
-          ######
-          exit 1
-
+          aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 022673484458.dkr.ecr.us-east-1.amazonaws.com
+          docker build -t image-validator .
+          docker tag image-validator:latest 022673484458.dkr.ecr.us-east-1.amazonaws.com/image-validator:latest
+          docker push 022673484458.dkr.ecr.us-east-1.amazonaws.com/image-validator:latest 
       - name: Check if Lambda function exists
         id: check-lambda-image-validator
         run: |

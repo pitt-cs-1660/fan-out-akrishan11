@@ -2,14 +2,16 @@ import json
 import os
 import boto3
 
-s3 = boto3.client('s3')
+s3 = boto3.client("s3")
 
-VALID_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.gif']
+VALID_EXTENSIONS = [".jpg", ".jpeg", ".png", ".gif"]
+
 
 def is_valid_image(key):
     """check if the file has a valid image extension."""
     _, ext = os.path.splitext(key.lower())
     return ext in VALID_EXTENSIONS
+
 
 def lambda_handler(event, context):
     """
@@ -41,6 +43,25 @@ def lambda_handler(event, context):
 
     print("=== image validator invoked ===")
 
+    for record in event["Records"]:
+        message = record["Sns"]["Message"]
+        s3_event = json.loads(message)
+        for s3_record in s3_event["Records"]:
+            bucket = s3_record["s3"]["bucket"]["name"]
+            key = s3_record["s3"]["object"]["key"]
+            valid = is_valid_image(key)
+            if valid:
+                print(f"[VALID] {key} is a valid image file")
+                filename = os.path.splitext(key.split("/")[-1])[0]
+                s3.copy_object(
+                    Bucket=bucket,
+                    Key=f"processed/valid/{filename}",
+                    CopySource={"Bucket": bucket, "Key": key},
+                )
+            else:
+                print(f"[INVALID] {key} is not a valid image type")
+                raise ValueError
+
     # todo: loop through event['Records']
     # todo: for each record, get the SNS message string from record['Sns']['Message']
     # todo: parse the SNS message string as JSON to get the S3 event
@@ -59,4 +80,4 @@ def lambda_handler(event, context):
     #         - print the [INVALID] message: print(f"[INVALID] {key} is not a valid image type")
     #         - raise ValueError to trigger DLQ
 
-    return {'statusCode': 200, 'body': 'validation complete'}
+    return {"statusCode": 200, "body": "validation complete"}

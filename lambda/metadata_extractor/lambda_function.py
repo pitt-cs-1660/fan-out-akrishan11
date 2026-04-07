@@ -3,7 +3,8 @@ import os
 import boto3
 from datetime import datetime
 
-s3 = boto3.client('s3')
+s3 = boto3.client("s3")
+
 
 def lambda_handler(event, context):
     """
@@ -38,6 +39,32 @@ def lambda_handler(event, context):
 
     print("=== metadata extractor invoked ===")
 
+    for record in event["Records"]:
+        message = record["Sns"]["Message"]
+        s3_event = json.loads(message)
+        for s3_record in s3_event["Records"]:
+            bucket = s3_record["s3"]["bucket"]["name"]
+            key = s3_record["s3"]["object"]["key"]
+            size = s3_record["s3"]["object"]["size"]
+            event_time = s3_record["eventTime"]
+            print(f"[METADATA] File: {key}")
+            print(f"[METADATA] Bucket: {bucket}")
+            print(f"[METADATA] Size: {size} bytes")
+            print(f"[METADATA] Upload Time: {event_time}")
+            metadata = {
+                "file": key,
+                "bucket": bucket,
+                "size": size,
+                "upload_time": event_time,
+            }
+            filename = os.path.splitext(key.split("/")[-1])[0]
+            s3.put_object(
+                Bucket=bucket,
+                Key=f"processed/metadata/{filename}.json",
+                Body=json.dumps(metadata),
+                ContentType="application/json",
+            )
+
     # todo: loop through event['Records']
     # todo: for each record, get the SNS message string from record['Sns']['Message']
     # todo: parse the SNS message string as JSON to get the S3 event
@@ -58,4 +85,4 @@ def lambda_handler(event, context):
     #       hint: s3.put_object(Bucket=bucket, Key=f"processed/metadata/{filename}.json",
     #             Body=json.dumps(metadata), ContentType='application/json')
 
-    return {'statusCode': 200, 'body': 'metadata extracted'}
+    return {"statusCode": 200, "body": "metadata extracted"}
