@@ -1,0 +1,1 @@
+"TopicArn": "arn:aws:sns:us-east-1:022673484458:image-upload-notifications"
